@@ -82,6 +82,9 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Get OpenAI base URL from environment (if set)
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
+
 # Get preferred provider (default to openai)
 PREFERRED_PROVIDER = os.environ.get("PREFERRED_PROVIDER", "openai").lower()
 
@@ -1111,7 +1114,12 @@ async def create_message(
         # Determine which API key to use based on the model
         if request.model.startswith("openai/"):
             litellm_request["api_key"] = OPENAI_API_KEY
-            logger.debug(f"Using OpenAI API key for model: {request.model}")
+            # Use custom OpenAI base URL if configured
+            if OPENAI_BASE_URL:
+                litellm_request["api_base"] = OPENAI_BASE_URL
+                logger.debug(f"Using OpenAI API key and custom base URL {OPENAI_BASE_URL} for model: {request.model}")
+            else:
+                logger.debug(f"Using OpenAI API key for model: {request.model}")
         elif request.model.startswith("gemini/"):
             litellm_request["api_key"] = GEMINI_API_KEY
             logger.debug(f"Using Gemini API key for model: {request.model}")
@@ -1391,11 +1399,18 @@ async def count_tokens(
                 200  # Assuming success at this point
             )
             
+            # Prepare token counter arguments
+            token_counter_args = {
+                "model": converted_request["model"],
+                "messages": converted_request["messages"],
+            }
+            
+            # Add custom base URL for OpenAI models if configured
+            if request.model.startswith("openai/") and OPENAI_BASE_URL:
+                token_counter_args["api_base"] = OPENAI_BASE_URL
+            
             # Count tokens
-            token_count = token_counter(
-                model=converted_request["model"],
-                messages=converted_request["messages"],
-            )
+            token_count = token_counter(**token_counter_args)
             
             # Return Anthropic-style response
             return TokenCountResponse(input_tokens=token_count)
