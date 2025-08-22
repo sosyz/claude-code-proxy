@@ -17,6 +17,8 @@ A proxy server that lets you use Anthropic clients with Gemini, OpenAI, or Anthr
 
 ### Setup 🛠️
 
+#### From source
+
 1. **Clone this repository**:
    ```bash
    git clone https://github.com/1rgs/claude-code-proxy.git
@@ -53,6 +55,31 @@ A proxy server that lets you use Anthropic clients with Gemini, OpenAI, or Anthr
    uv run uvicorn server:app --host 0.0.0.0 --port 8082 --reload
    ```
    *(`--reload` is optional, for development)*
+
+#### Docker
+
+If using docker, download the example environment file to `.env` and edit it as described above.
+```bash
+curl -O .env https://raw.githubusercontent.com/1rgs/claude-code-proxy/refs/heads/main/.env.example
+```
+
+Then, you can either start the container with [docker compose](https://docs.docker.com/compose/) (preferred):
+
+```yml
+services:
+  proxy:
+    image: ghcr.io/1rgs/claude-code-proxy:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - 8082:8082
+```
+
+Or with a command:
+
+```bash
+docker run -d --env-file .env -p 8082:8082 ghcr.io/1rgs/claude-code-proxy:latest
+```
 
 ### Using with Claude Code 🎮
 
@@ -101,7 +128,7 @@ The following Gemini models are supported with automatic `gemini/` prefix handli
 
 ### Model Prefix Handling
 The proxy automatically adds the appropriate prefix to model names:
-- OpenAI models get the `openai/` prefix 
+- OpenAI models get the `openai/` prefix
 - Gemini models get the `gemini/` prefix
 - The BIG_MODEL and SMALL_MODEL will get the appropriate prefix based on whether they're in the OpenAI or Gemini model lists
 
